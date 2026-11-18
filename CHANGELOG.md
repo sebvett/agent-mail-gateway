@@ -18,6 +18,8 @@ All notable changes to this project are documented here. The format follows
   subject to `require_sender_auth` and `inbound_checks`.
 - `extra_body` for `review.llm` and vision `read_images`: provider-specific request fields
   (e.g. OpenRouter `provider: { zdr: true }`).
+- `webhook.notify_filtered`: a `message.filtered` webhook (sender, date and the check, no
+  content) when an incoming mail check hides a message.
 
 ## [0.5.0]
 

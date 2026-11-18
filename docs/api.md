@@ -272,7 +272,13 @@ X-Webhook-Signature-V2: 5d1f…
 ```
 
 A message flagged by the incoming mail checks also has `"security_flags": ["prompt_injection"]`;
-mail hidden by them sends no webhook.
+mail hidden by them sends no webhook, unless `webhook.notify_filtered` is on. Then it sends a
+`message.filtered` event that names the sender and the check, but contains nothing the sender
+wrote:
+
+```json
+{"event":"message.filtered","event_type":"message.filtered","mailbox":"assistant","message":{"id":"1712345678-43","from":"x@example.org","date":"2026-10-02T08:16:00.000Z","filtered_by":"prompt_injection"}}
+```
 
 Both header pairs carry the same HMAC-SHA256 over `"<timestamp>.<raw body>"`:
 `X-Gateway-*` with a `sha256=` prefix, and `X-Webhook-*` without prefix — the generic "V2"

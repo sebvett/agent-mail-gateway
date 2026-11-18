@@ -54,6 +54,7 @@ must be set and non-empty.
 | `attachments.read_images` | object | — | Read text in images: `{ engine: vision, url, model }` or `{ engine: ocr, languages }`. |
 | `inbound_checks.<check>` | object | see below | `{ action: hide \| flag \| off, skip_senders: [] }` for `virus`, `dangerous_attachment`, `prompt_injection`, `scan_failed`. |
 | `webhook.url` / `webhook.secret` | string | — | Optional webhook; secret at least 16 characters. |
+| `webhook.notify_filtered` | boolean | `false` | Also send a `message.filtered` webhook (no content) when an incoming mail check hides a message. |
 
 ### Ports and `security`
 
