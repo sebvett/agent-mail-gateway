@@ -15,6 +15,11 @@ describe('address matching', () => {
     expect(matchesPattern('a@evilexample.org', '*@example.org')).toBe(false);
   });
 
+  it('matches any address with *', () => {
+    expect(matchesPattern('a@example.org', '*')).toBe(true);
+    expect(matchesPattern('not-an-address', '*')).toBe(false);
+  });
+
   it('isAllowed is false for an empty list', () => {
     expect(isAllowed('a@b.de', [])).toBe(false);
   });

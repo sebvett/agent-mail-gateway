@@ -14,6 +14,8 @@ All notable changes to this project are documented here. The format follows
 - `receive_for`: several mailbox entries can share one IMAP account (e.g. a catch-all), each
   handling only the mail delivered to its own addresses (`Delivered-To`, `X-Original-To` or
   `Envelope-To`).
+- `allow_receive_from: ["*"]` accepts mail from any sender (e.g. a newsletter address), still
+  subject to `require_sender_auth` and `inbound_checks`.
 
 ## [0.5.0]
 
