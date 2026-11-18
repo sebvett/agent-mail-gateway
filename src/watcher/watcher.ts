@@ -3,7 +3,7 @@ import { encodeMessageId } from '../mail/ids.js';
 import type { MessageMeta } from '../mail/imap.js';
 import { type ParsedMessage, parseHeaders } from '../mail/parse.js';
 import { decideInbound } from '../policy/inbound.js';
-import { evaluateSenderAuth } from '../policy/sender-auth.js';
+import { authResultsFor, evaluateSenderAuth } from '../policy/sender-auth.js';
 import { type MailboxContext, recordAudit } from '../services/context.js';
 import { recordResponse } from '../services/events.js';
 import { parseForSummary } from '../services/messages.js';
@@ -114,8 +114,11 @@ export class InboundWatcher {
           headers?.from &&
           this.isAttendee(headers.from) &&
           (!config.require_sender_auth ||
-            evaluateSenderAuth(headers.authResults, headers.from, config.trusted_authserv_id) ===
-              'pass')
+            evaluateSenderAuth(
+              authResultsFor(config, headers),
+              headers.from,
+              config.trusted_authserv_id,
+            ) === 'pass')
         ) {
           this.recordReply(await parseForSummary(this.ctx, meta), headers.from);
         }

@@ -1,3 +1,6 @@
+import type { MailboxConfig } from '../config/schema.js';
+import type { ParsedHeaders } from '../mail/parse.js';
+
 export type SenderAuthResult = 'pass' | 'fail' | 'missing';
 
 interface AuthEntry {
@@ -40,16 +43,17 @@ const DMARC_VERDICTS = new Set(['pass', 'fail', 'quarantine', 'reject']);
 
 /**
  * Evaluates the Authentication-Results added by the receiving server. Uses the top-most header,
- * or, when `trustedAuthservId` is set, the top-most header from that server only.
+ * or, when `trustedAuthservId` is set, the top-most header from one of those servers only.
  */
 export function evaluateSenderAuth(
   headers: string[],
   fromAddress: string,
-  trustedAuthservId?: string,
+  trustedAuthservId?: string | string[],
 ): SenderAuthResult {
-  const top = trustedAuthservId
-    ? headers.find((h) => authservId(h) === trustedAuthservId.toLowerCase())
-    : headers[0];
+  const trusted = trustedAuthservId
+    ? [trustedAuthservId].flat().map((id) => id.toLowerCase())
+    : undefined;
+  const top = trusted ? headers.find((h) => trusted.includes(authservId(h))) : headers[0];
   if (top === undefined) return 'missing';
   const fromDomain = fromAddress.toLowerCase().split('@').pop() ?? '';
   const entries = parseHeader(top);
@@ -72,4 +76,15 @@ export function evaluateSenderAuth(
       e.method === 'spf' && e.result === 'pass' && aligned(e.props['smtp.mailfrom'], fromDomain),
   );
   return dkimPass || spfPass ? 'pass' : 'fail';
+}
+
+/**
+ * The results to evaluate: Authentication-Results first, then, with `trust_arc`, the ARC results
+ * that a forwarding or storing server such as Forward Email writes instead.
+ */
+export function authResultsFor(
+  cfg: Partial<Pick<MailboxConfig, 'trust_arc'>>,
+  headers: Pick<ParsedHeaders, 'authResults' | 'arcAuthResults'>,
+): string[] {
+  return cfg.trust_arc ? [...headers.authResults, ...headers.arcAuthResults] : headers.authResults;
 }

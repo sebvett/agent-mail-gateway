@@ -33,8 +33,22 @@ describe('parseMessage', () => {
     expect(p.bodyMarkdown).toBe('Hello **agent**');
     expect(p.preview).toBe('Hello **agent**');
     expect(p.authResults).toEqual(['mx.test; dmarc=pass header.from=example.net']);
+    expect(p.arcAuthResults).toEqual([]);
     expect(p.attachments).toMatchObject([
       { index: 0, filename: 'a.txt', contentType: 'text/plain', size: 3 },
+    ]);
+  });
+
+  it('reads ARC results without their instance tag', async () => {
+    const raw = Buffer.from(
+      'ARC-Authentication-Results: i=2; mx1.fwd.example;\r\n dmarc=pass header.from=example.net\r\n' +
+        'ARC-Authentication-Results: i=1; mx.origin.example; spf=pass\r\n' +
+        'From: a@example.net\r\nSubject: s\r\n\r\nbody\r\n',
+    );
+    const p = await parseMessage(raw);
+    expect(p.arcAuthResults).toEqual([
+      'mx1.fwd.example; dmarc=pass header.from=example.net',
+      'mx.origin.example; spf=pass',
     ]);
   });
 

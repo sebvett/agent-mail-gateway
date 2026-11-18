@@ -14,6 +14,8 @@ export interface ParsedHeaders {
   from: string | null;
   fromName: string | null;
   authResults: string[];
+  /** ARC-Authentication-Results values without their `i=` instance tag, top-most first. */
+  arcAuthResults: string[];
 }
 
 export interface ParsedMessage extends ParsedHeaders {
@@ -55,18 +57,22 @@ function headersOf(parsed: Parsed): ParsedHeaders {
   // Exactly one From header with exactly one address; anything else is ambiguous and could be
   // used to show a different sender than the one authenticated by SPF/DKIM/DMARC.
   const sender = fromHeaders === 1 && senders.length === 1 ? senders[0] : undefined;
-  const authResults = parsed.headerLines
-    .filter((l) => l.key === 'authentication-results')
-    .map((l) =>
-      l.line
-        .replace(/^[^:]*:\s*/, '')
-        .replace(/\r?\n[ \t]+/g, ' ')
-        .trim(),
-    );
+  const values = (key: string) =>
+    parsed.headerLines
+      .filter((l) => l.key === key)
+      .map((l) =>
+        l.line
+          .replace(/^[^:]*:\s*/, '')
+          .replace(/\r?\n[ \t]+/g, ' ')
+          .trim(),
+      );
   return {
     from: sender?.address?.toLowerCase() || null,
     fromName: sender?.name || null,
-    authResults,
+    authResults: values('authentication-results'),
+    arcAuthResults: values('arc-authentication-results').map((v) =>
+      v.replace(/^i\s*=\s*\d+\s*;\s*/i, ''),
+    ),
   };
 }
 

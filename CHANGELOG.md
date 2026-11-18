@@ -6,6 +6,12 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- `trust_arc`: accept `ARC-Authentication-Results` from `trusted_authserv_id` for sender
+  authentication, for providers that write only those (e.g. Forward Email).
+- `trusted_authserv_id` accepts a list of server names.
+
 ## [0.5.0]
 
 ### Added

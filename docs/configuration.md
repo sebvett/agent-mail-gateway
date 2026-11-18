@@ -36,7 +36,8 @@ must be set and non-empty.
 | `allow_send_to` | list | `[]` | Who the agent may send mail and invites to. |
 | `non_allowed_action` | `delete` \| `keep` | `delete` | What happens to mail from non-allowed senders. |
 | `require_sender_auth` | boolean | `true` | Require a passing SPF/DKIM/DMARC result. |
-| `trusted_authserv_id` | string | — | Only trust `Authentication-Results` from this server name. |
+| `trusted_authserv_id` | string or list | — | Only trust `Authentication-Results` from this server name (or these names). |
+| `trust_arc` | boolean | `false` | Also accept `ARC-Authentication-Results` from `trusted_authserv_id`, for servers that write only those. |
 | `allow_delete` | boolean | `false` | Let the agent move mail to Trash. |
 | `max_sends_per_hour` | number | `30` | Sends (incl. invites) per rolling hour. `0` = unlimited. |
 | `max_attachment_mb` | number | `15` | Max total attachment size per outgoing message. |
@@ -112,6 +113,13 @@ the start of its `Authentication-Results` header (e.g. `mail.yourmailserver.eu` 
 `Authentication-Results: mail.yourmailserver.eu; dmarc=pass …`). The gateway then ignores
 headers from anyone else — a sender cannot slip in a forged `Authentication-Results` header on
 a path where your server does not add one.
+
+**`trust_arc`:** some providers that store mail for a forwarding domain, such as Forward Email,
+write their verdict only as `ARC-Authentication-Results`. With `trust_arc: true` the gateway
+uses those as well, after any `Authentication-Results`, but only from `trusted_authserv_id`
+(required): ARC results from any other server are ignored, so a forged header written by the
+sender never counts. Forward Email, for example, needs
+`trusted_authserv_id: [mx1.forwardemail.net, mx2.forwardemail.net]`.
 
 **Check that your server adds this header** before relying on it: open any received message's
 source (in most mail clients: "Show original" / "View source") and look for

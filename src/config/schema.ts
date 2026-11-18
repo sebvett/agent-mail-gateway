@@ -114,7 +114,12 @@ export const mailboxSchema = z
     allow_send_to: z.array(addressPattern).default([]),
     non_allowed_action: z.enum(['delete', 'keep']).default('delete'),
     require_sender_auth: z.boolean().default(true),
-    trusted_authserv_id: z.string().trim().toLowerCase().min(1).optional(),
+    trusted_authserv_id: z
+      .union([z.string(), z.array(z.string()).min(1)])
+      .transform((v) => (Array.isArray(v) ? v : [v]))
+      .pipe(z.array(z.string().trim().toLowerCase().min(1)))
+      .optional(),
+    trust_arc: z.boolean().default(false),
     allow_delete: z.boolean().default(false),
     max_sends_per_hour: z.coerce.number().int().min(0).default(30),
     max_attachment_mb: z.coerce.number().positive().default(15),
@@ -237,7 +242,11 @@ export const mailboxSchema = z
       .strict()
       .optional(),
   })
-  .strict();
+  .strict()
+  .refine((mb) => !mb.trust_arc || mb.trusted_authserv_id, {
+    message: 'trust_arc needs trusted_authserv_id (the server whose ARC results are trusted)',
+    path: ['trust_arc'],
+  });
 
 export const configSchema = z
   .object({

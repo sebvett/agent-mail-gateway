@@ -55,6 +55,50 @@ describe('evaluateSenderAuth', () => {
   it('reports missing when there is no header', () => {
     expect(evaluateSenderAuth([], 'a@example.net')).toBe('missing');
   });
+
+  it('accepts several trusted servers', () => {
+    const h = ['forged; dmarc=fail', 'mx2.example; dmarc=pass'];
+    expect(evaluateSenderAuth(h, 'a@example.net', ['mx1.example', 'mx2.example'])).toBe('pass');
+  });
+});
+
+describe('ARC results', () => {
+  const cfg = {
+    allow_receive_from: ['boss@test.local'],
+    require_sender_auth: true,
+    trusted_authserv_id: ['mx1.fwd.example'],
+  };
+  const arc = (v: string) => ({ from: 'boss@test.local', authResults: [], arcAuthResults: [v] });
+
+  it('are ignored unless trust_arc is on', () => {
+    expect(decideInbound(cfg, arc('mx1.fwd.example; dmarc=pass'))).toEqual({
+      allowed: false,
+      reason: 'sender_auth_missing',
+    });
+  });
+
+  it('count from the trusted server with trust_arc', () => {
+    const on = { ...cfg, trust_arc: true };
+    expect(decideInbound(on, arc('mx1.fwd.example; dmarc=pass'))).toEqual({ allowed: true });
+    expect(decideInbound(on, arc('mx1.fwd.example; dmarc=fail'))).toEqual({
+      allowed: false,
+      reason: 'sender_auth_failed',
+    });
+    expect(decideInbound(on, arc('other.example; dmarc=pass'))).toEqual({
+      allowed: false,
+      reason: 'sender_auth_missing',
+    });
+  });
+
+  it('come after Authentication-Results from the same server', () => {
+    const on = { ...cfg, trust_arc: true };
+    const msg = {
+      from: 'boss@test.local',
+      authResults: ['mx1.fwd.example; dmarc=fail'],
+      arcAuthResults: ['mx1.fwd.example; dmarc=pass'],
+    };
+    expect(decideInbound(on, msg)).toEqual({ allowed: false, reason: 'sender_auth_failed' });
+  });
 });
 
 describe('decideInbound', () => {

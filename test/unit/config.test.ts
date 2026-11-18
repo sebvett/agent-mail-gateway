@@ -35,6 +35,17 @@ describe('parseConfig', () => {
     expect(cfg.server).toEqual({ port: 8080, log_level: 'info', data_dir: '/data' });
   });
 
+  it('accepts one or several trusted servers and needs one for trust_arc', () => {
+    const one = parseConfig(base('    trusted_authserv_id: MX.example.com\n'), env);
+    expect(one.mailboxes[0]!.trusted_authserv_id).toEqual(['mx.example.com']);
+    const two = parseConfig(
+      base('    trusted_authserv_id: [mx1.example.com, mx2.example.com]\n    trust_arc: true\n'),
+      env,
+    );
+    expect(two.mailboxes[0]!.trusted_authserv_id).toEqual(['mx1.example.com', 'mx2.example.com']);
+    expect(() => parseConfig(base('    trust_arc: true\n'), env)).toThrow(/trust_arc/);
+  });
+
   it('reports all missing env vars at once', () => {
     expect(() => parseConfig(base(), {})).toThrow(/AGENT_KEY, AGENT_PW/);
   });
