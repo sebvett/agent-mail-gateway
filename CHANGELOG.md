@@ -20,6 +20,9 @@ All notable changes to this project are documented here. The format follows
   (e.g. OpenRouter `provider: { zdr: true }`).
 - `webhook.notify_filtered`: a `message.filtered` webhook (sender, date and the check, no
   content) when an incoming mail check hides a message.
+- `extract`: the review model turns each received message into JSON (optionally checked
+  against a JSON Schema), returned as `extracted` in webhooks and `read_message`. With
+  `content: extracted` the agent sees only the extraction, never what the sender wrote.
 
 ## [0.5.0]
 

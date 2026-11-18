@@ -243,6 +243,14 @@ export const mailboxSchema = z
       })
       .strict()
       .prefault({}),
+    extract: z
+      .object({
+        prompt: z.string().trim().min(1),
+        schema: z.record(z.string(), z.unknown()).optional(),
+        content: z.enum(['full', 'extracted']).default('full'),
+      })
+      .strict()
+      .optional(),
     webhook: z
       .object({
         url: z.url(),
@@ -254,9 +262,23 @@ export const mailboxSchema = z
   })
   .strict()
   .refine((mb) => !mb.trust_arc || mb.trusted_authserv_id, {
-    message: 'trust_arc needs trusted_authserv_id (the server whose ARC results are trusted)',
-    path: ['trust_arc'],
   });
+  .refine((mb) => !mb.extract || mb.review.llm, {
+    message: 'extract needs review.llm (the model that extracts)',
+    path: ['extract'],
+  })
+  .refine(
+    (mb) => {
+      if (!mb.extract?.schema) return true;
+      try {
+        z.fromJSONSchema(mb.extract.schema as Parameters<typeof z.fromJSONSchema>[0]);
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    { message: 'extract.schema is not a valid JSON Schema', path: ['extract', 'schema'] },
+  );
 
 export const configSchema = z
   .object({

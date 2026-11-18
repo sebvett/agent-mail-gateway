@@ -81,6 +81,10 @@ export class Store {
         mailbox TEXT NOT NULL, uid_validity TEXT NOT NULL, uid INTEGER NOT NULL,
         settings TEXT NOT NULL, findings TEXT NOT NULL, at INTEGER NOT NULL,
         PRIMARY KEY (mailbox, uid_validity, uid));
+      CREATE TABLE IF NOT EXISTS extractions (
+        mailbox TEXT NOT NULL, uid_validity TEXT NOT NULL, uid INTEGER NOT NULL,
+        settings TEXT NOT NULL, data TEXT NOT NULL, at INTEGER NOT NULL,
+        PRIMARY KEY (mailbox, uid_validity, uid));
     `);
   }
 
@@ -218,6 +222,33 @@ export class Store {
       .run(mailbox, uidValidity, uid, settings, JSON.stringify(data), at);
   }
 
+  /** Stored extraction of one message, if made with the same settings. */
+  getExtraction(mailbox: string, uidValidity: string, uid: number, settings: string): unknown {
+    const row = this.db
+      .prepare(
+        'SELECT data FROM extractions WHERE mailbox = ? AND uid_validity = ? AND uid = ? AND settings = ?',
+      )
+      .get(mailbox, uidValidity, uid, settings) as Row | undefined;
+    return row ? JSON.parse(String(row.data)) : undefined;
+  }
+
+  saveExtraction(
+    mailbox: string,
+    uidValidity: string,
+    uid: number,
+    settings: string,
+    data: unknown,
+    at: number,
+  ): void {
+    this.db
+      .prepare(
+        `INSERT INTO extractions (mailbox, uid_validity, uid, settings, data, at) VALUES (?, ?, ?, ?, ?, ?)
+         ON CONFLICT (mailbox, uid_validity, uid) DO UPDATE SET
+           settings = excluded.settings, data = excluded.data, at = excluded.at`,
+      )
+      .run(mailbox, uidValidity, uid, settings, JSON.stringify(data), at);
+  }
+
   /** Removes rows nobody needs anymore so the database does not grow forever. */
   prune(now: number): void {
     const day = 86_400_000;
@@ -225,6 +256,7 @@ export class Store {
     this.db.prepare('DELETE FROM fingerprints WHERE at < ?').run(now - 7 * day);
     this.db.prepare('DELETE FROM audit WHERE at < ?').run(now - 180 * day);
     this.db.prepare('DELETE FROM scans WHERE at < ?').run(now - 90 * day);
+    this.db.prepare('DELETE FROM extractions WHERE at < ?').run(now - 90 * day);
     this.db
       .prepare(`DELETE FROM webhooks WHERE status != 'pending' AND next_attempt_at < ?`)
       .run(now - 30 * day);

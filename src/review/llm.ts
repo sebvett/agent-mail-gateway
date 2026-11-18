@@ -118,7 +118,7 @@ const chat = (cfg: ModelEndpoint, system: string, content: string, fetchFn: type
     fetchFn,
   );
 
-function parseJson(text: string): unknown {
+export function parseJson(text: string): unknown {
   for (const candidate of [text, /\{[\s\S]*\}/.exec(text)?.[0] ?? '']) {
     try {
       return JSON.parse(candidate);

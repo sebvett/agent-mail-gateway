@@ -53,6 +53,7 @@ must be set and non-empty.
 | `attachments.blocked_extensions` | list | built-in | File types that can run code; replaces the built-in list. |
 | `attachments.read_images` | object | — | Read text in images: `{ engine: vision, url, model }` or `{ engine: ocr, languages }`. |
 | `inbound_checks.<check>` | object | see below | `{ action: hide \| flag \| off, skip_senders: [] }` for `virus`, `dangerous_attachment`, `prompt_injection`, `scan_failed`. |
+| `extract` | object | — | Turn each received message into structured data with the review model (see below). |
 | `webhook.url` / `webhook.secret` | string | — | Optional webhook; secret at least 16 characters. |
 | `webhook.notify_filtered` | boolean | `false` | Also send a `message.filtered` webhook (no content) when an incoming mail check hides a message. |
 
@@ -114,6 +115,31 @@ headers: without it, an entry with `receive_for` sees no mail at all.
 
 The entries still share the account's folders: what one agent sends lands in the same Sent
 folder as the others'.
+### Extracting structured data
+
+With `extract`, the `review.llm` model turns each received message into JSON, for example the
+events in a newsletter:
+
+```yaml
+    extract:
+      prompt: List every event with its title, date, time, venue, price and booking link.
+      schema:            # optional JSON Schema; answers that do not match count as failed
+        type: object
+        properties:
+          events: { type: array, items: { type: object } }
+        required: [events]
+      content: extracted # or full (default)
+```
+
+The result appears as `extracted` in the webhook and in `read_message`; if the model fails or
+answers outside the schema, `extract_error` says why, and `read_message` tries again. Results
+are stored per message, so each message is extracted once.
+
+`content: extracted` makes the extraction the only thing the agent sees of a message: subject,
+preview, body and attachments are left out of webhooks, `list_messages` and `read_message`.
+Use it for mail from senders you do not know, so that their text never reaches the agent. The
+model that extracts still reads it; like every model it can be misled, which the schema and
+the `prompt_injection` check limit but do not rule out.
 
 ### Sender authentication
 
