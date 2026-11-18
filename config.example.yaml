@@ -35,6 +35,10 @@ mailboxes:
     allow_receive_from:
       - you@yourmailserver.eu
       - "*@yourcompany.eu"
+    # Optional: share one IMAP account (e.g. a catch-all) between several entries. Each entry
+    # only handles mail delivered to these addresses (Delivered-To / X-Original-To header).
+    # receive_for:
+    #   - agent@yourmailserver.eu
     # Who the agent may send mail and calendar invites to. Same pattern rules.
     # If any recipient (to, cc, bcc, attendee) is not listed, the whole request is rejected.
     # Empty list: the agent cannot send.

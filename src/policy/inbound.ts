@@ -6,15 +6,23 @@ export type InboundDecision =
   | { allowed: true }
   | {
       allowed: false;
-      reason: 'sender_not_allowed' | 'sender_auth_failed' | 'sender_auth_missing' | 'unparsable';
+      reason:
+        | 'other_recipient'
+        | 'sender_not_allowed'
+        | 'sender_auth_failed'
+        | 'sender_auth_missing'
+        | 'unparsable';
     };
 
 export function decideInbound(
   cfg: Pick<MailboxConfig, 'allow_receive_from' | 'require_sender_auth'> &
-    Partial<Pick<MailboxConfig, 'trusted_authserv_id'>>,
-  msg: { from: string | null; authResults: string[] } | null,
+    Partial<Pick<MailboxConfig, 'trusted_authserv_id' | 'receive_for'>>,
+  msg: { from: string | null; authResults: string[]; deliveredTo?: string | null } | null,
 ): InboundDecision {
   if (!msg) return { allowed: false, reason: 'unparsable' };
+  if (cfg.receive_for && !(msg.deliveredTo && isAllowed(msg.deliveredTo, cfg.receive_for))) {
+    return { allowed: false, reason: 'other_recipient' };
+  }
   if (!msg.from || !isAllowed(msg.from, cfg.allow_receive_from)) {
     return { allowed: false, reason: 'sender_not_allowed' };
   }

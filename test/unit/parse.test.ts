@@ -38,6 +38,16 @@ describe('parseMessage', () => {
     ]);
   });
 
+  it('takes the delivery address from the top-most delivery header', async () => {
+    const raw = Buffer.from(
+      'X-Original-To: Culture@Agents.example\r\nDelivered-To: <other@agents.example>\r\n' +
+        'From: a@example.net\r\nTo: someone@else.example\r\n\r\nbody\r\n',
+    );
+    expect((await parseMessage(raw)).deliveredTo).toBe('culture@agents.example');
+    const none = Buffer.from('From: a@example.net\r\nTo: b@example.net\r\n\r\nbody\r\n');
+    expect((await parseMessage(none)).deliveredTo).toBeNull();
+  });
+
   it('falls back to the text part and tolerates a missing From', async () => {
     const raw = Buffer.from('Subject: no from\r\n\r\nplain body\r\n');
     const p = await parseMessage(raw);
