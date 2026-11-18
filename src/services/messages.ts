@@ -1,6 +1,7 @@
 import { extractText, readableImage } from '../attachments/extract.js';
 import { formatInZone } from '../calendar/time.js';
 import { GatewayError } from '../errors.js';
+import { extractionView, extractMessage } from '../inbound/extract.js';
 import {
   inspect,
   type SecurityFinding,
@@ -63,6 +64,9 @@ export interface MessageDetail extends MessageSummary {
   }[];
   /** Security findings of the inbound checks; only present when the message was flagged. */
   security?: { findings: SecurityFinding[]; note: string };
+  /** The structured data from extract, or why it could not be made. */
+  extracted?: unknown;
+  extract_error?: string;
 }
 
 export function mailboxInfo(ctx: MailboxContext) {
@@ -99,16 +103,19 @@ export function mailboxInfo(ctx: MailboxContext) {
 const flags = (v: Verdict | null) =>
   v && v.findings.length > 0 ? { security_flags: [...new Set(v.findings.map((f) => f.type))] } : {};
 
-function summary(id: string, parsed: ParsedMessage, seen: boolean): MessageSummary {
+/** With extract.content "extracted" the agent sees the extraction instead of what the sender wrote. */
+const isSealed = (ctx: MailboxContext) => ctx.config.extract?.content === 'extracted';
+
+function summary(id: string, parsed: ParsedMessage, seen: boolean, sealed = false): MessageSummary {
   return {
     id,
     from: parsed.from,
     from_name: parsed.fromName,
     to: parsed.to,
     cc: parsed.cc,
-    subject: parsed.subject,
+    subject: sealed ? '' : parsed.subject,
     date: parsed.date,
-    preview: parsed.preview,
+    preview: sealed ? '' : parsed.preview,
     unread: !seen,
     has_attachments: parsed.attachments.length > 0,
   };
@@ -220,7 +227,7 @@ export async function listMessages(
       lastReturned = meta.uid;
       if (verdict?.hiddenBy) continue;
       messages.push({
-        ...summary(encodeMessageId(validity, meta.uid), parsed, meta.seen),
+        ...summary(encodeMessageId(validity, meta.uid), parsed, meta.seen, isSealed(ctx)),
         has_attachments: meta.hasAttachments || parsed.attachments.length > 0,
         ...flags(verdict),
       });
@@ -258,6 +265,23 @@ export async function getMessage(
   const { uid, seen, parsed, verdict } = await loadAllowed(ctx, id);
   if (markRead && !seen) await ctx.imap.setSeen(uid, true);
   const security = securityView(verdict);
+  const extraction = ctx.config.extract
+    ? extractionView(await extractMessage(ctx, decodeMessageId(id)!.uidValidity, uid, parsed))
+    : {};
+  if (isSealed(ctx)) {
+    return {
+      ...summary(id, parsed, markRead || seen, true),
+      has_attachments: false,
+      ...flags(verdict),
+      message_id: parsed.messageId,
+      reply_to: parsed.replyTo,
+      invitation: null,
+      body_markdown: '',
+      attachments: [],
+      ...extraction,
+      ...(security ? { security } : {}),
+    };
+  }
   return {
     ...summary(id, parsed, markRead || seen),
     ...flags(verdict),
@@ -290,6 +314,7 @@ export async function getMessage(
       size: a.size,
       ...(verdict.blocked.has(a.index) ? { blocked: verdict.blocked.get(a.index) } : {}),
     })),
+    ...extraction,
     ...(security ? { security } : {}),
   };
 }
@@ -307,6 +332,7 @@ export function assertNotBlocked(verdict: Verdict, index: number): void {
 }
 
 export async function getAttachment(ctx: MailboxContext, id: string, index: number) {
+  if (isSealed(ctx)) throw new GatewayError('not_found', 'Attachment not found');
   const { parsed, verdict } = await loadAllowed(ctx, id);
   const a = parsed.attachments[index];
   if (!a) throw new GatewayError('not_found', 'Attachment not found');

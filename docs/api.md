@@ -271,6 +271,9 @@ X-Webhook-Signature-V2: 5d1f…
 {"event":"message.received","event_type":"message.received","mailbox":"assistant","message":{"id":"1712345678-42","from":"you@yourmailserver.eu","subject":"Report","date":"2026-10-02T08:15:00.000Z","preview":"Please send…"}}
 ```
 
+With `extract` the message also has `extracted` (or `extract_error`); with
+`extract.content: extracted` it has no `subject` or `preview`.
+
 A message flagged by the incoming mail checks also has `"security_flags": ["prompt_injection"]`;
 mail hidden by them sends no webhook.
 

@@ -1,3 +1,4 @@
+import { extractionView, extractMessage } from '../inbound/extract.js';
 import { inspect, scanEnabled } from '../inbound/scan.js';
 import { encodeMessageId } from '../mail/ids.js';
 import type { MessageMeta } from '../mail/imap.js';
@@ -143,7 +144,7 @@ export class InboundWatcher {
     const scanning = scanEnabled(config);
     if (!config.webhook && !meta.hasCalendar && !scanning) return;
     // The checks need the whole message, also when it is too large for a preview.
-    const full = scanning ? (await imap.fetch([uid]))[0] : undefined;
+    const full = scanning || config.extract ? (await imap.fetch([uid]))[0] : undefined;
     const parsed = await parseForSummary(this.ctx, meta, full);
     const verdict = await inspect(this.ctx, validity, uid, parsed);
     if (verdict.hiddenBy) {
@@ -162,6 +163,10 @@ export class InboundWatcher {
 
     if (config.webhook) {
       const id = encodeMessageId(validity, uid);
+      const extraction = config.extract
+        ? await extractMessage(this.ctx, validity, uid, parsed)
+        : undefined;
+      const sealed = config.extract?.content === 'extracted';
       const payload = JSON.stringify({
         event: 'message.received',
         event_type: 'message.received',
@@ -169,9 +174,9 @@ export class InboundWatcher {
         message: {
           id,
           from: parsed.from,
-          subject: parsed.subject,
+          ...(sealed ? {} : { subject: parsed.subject, preview: parsed.preview }),
           date: parsed.date,
-          preview: parsed.preview,
+          ...extractionView(extraction),
           ...(verdict.findings.length > 0
             ? { security_flags: [...new Set(verdict.findings.map((f) => f.type))] }
             : {}),

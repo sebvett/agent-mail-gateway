@@ -6,6 +6,12 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- `extract`: the review model turns each received message into JSON (optionally checked
+  against a JSON Schema), returned as `extracted` in webhooks and `read_message`. With
+  `content: extracted` the agent sees only the extraction, never what the sender wrote.
+
 ## [0.5.0]
 
 ### Added
