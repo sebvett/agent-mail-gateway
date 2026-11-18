@@ -63,6 +63,26 @@ describe('InboundWatcher', () => {
     expect(store.listAudit('agent')).toMatchObject([{ action: 'filtered_keep', counterparts: [] }]);
   });
 
+  it('with receive_for, leaves mail for other addresses alone', async () => {
+    const { ctx, imap, store } = createTestContext({ ...hook, receive_for: ['agent@test.local'] });
+    const w = new InboundWatcher(ctx);
+    await w.processNew();
+    const deliveredTo = (to: string) => ({ 'Delivered-To': to });
+    imap.add(
+      await buildRaw({ from: 'stranger@evil.local', headers: deliveredTo('other@test.local') }),
+    );
+    imap.add(await buildRaw({ from: 'boss@test.local', headers: deliveredTo('other@test.local') }));
+    const mine = imap.add(
+      await buildRaw({ from: 'boss@test.local', headers: deliveredTo('agent@test.local') }),
+    );
+    await w.processNew();
+    expect(imap.messages).toHaveLength(3);
+    expect(imap.trash).toHaveLength(0);
+    expect(store.listAudit('agent')).toEqual([]);
+    const jobs = store.dueWebhooks(Date.now());
+    expect(jobs.map((j) => JSON.parse(j.payload).message.id)).toEqual([`1-${mine}`]);
+  });
+
   it('rebaselines when UIDVALIDITY changes', async () => {
     const { ctx, imap, store } = createTestContext(hook);
     const w = new InboundWatcher(ctx);

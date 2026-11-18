@@ -102,6 +102,7 @@ export class InboundWatcher {
     const headers = await parseHeaders(meta.header);
     const decision = decideInbound(config, headers);
     const counterparts = headers?.from ? [headers.from] : [];
+    if (!decision.allowed && decision.reason === 'other_recipient') return;
 
     if (!decision.allowed) {
       // Answers to our own invitations from attendees who may not otherwise write to this

@@ -16,6 +16,8 @@ export interface ParsedHeaders {
   authResults: string[];
   /** ARC-Authentication-Results values without their `i=` instance tag, top-most first. */
   arcAuthResults: string[];
+  /** The address the receiving server delivered to (top-most Delivered-To, X-Original-To or Envelope-To). */
+  deliveredTo: string | null;
 }
 
 export interface ParsedMessage extends ParsedHeaders {
@@ -51,6 +53,8 @@ function addresses(field: AddressObject | AddressObject[] | undefined): string[]
     .filter((a): a is string => Boolean(a));
 }
 
+const DELIVERY_HEADERS = new Set(['delivered-to', 'x-original-to', 'envelope-to']);
+
 function headersOf(parsed: Parsed): ParsedHeaders {
   const fromHeaders = parsed.headerLines.filter((l) => l.key === 'from').length;
   const senders = flatten(parsed.from);
@@ -66,6 +70,10 @@ function headersOf(parsed: Parsed): ParsedHeaders {
           .replace(/\r?\n[ \t]+/g, ' ')
           .trim(),
       );
+  const delivery = parsed.headerLines.find((l) => DELIVERY_HEADERS.has(l.key));
+  const deliveredTo = delivery
+    ? (/<?([^\s<>@]+@[^\s<>@]+)>?/.exec(delivery.line.replace(/^[^:]*:/, ''))?.[1] ?? null)
+    : null;
   return {
     from: sender?.address?.toLowerCase() || null,
     fromName: sender?.name || null,
@@ -73,6 +81,7 @@ function headersOf(parsed: Parsed): ParsedHeaders {
     arcAuthResults: values('arc-authentication-results').map((v) =>
       v.replace(/^i\s*=\s*\d+\s*;\s*/i, ''),
     ),
+    deliveredTo: deliveredTo?.toLowerCase() ?? null,
   };
 }
 

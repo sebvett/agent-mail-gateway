@@ -33,6 +33,7 @@ must be set and non-empty.
 | `username` | string | required | Login for IMAP and SMTP. |
 | `password` | string | required | Password for IMAP and SMTP. |
 | `allow_receive_from` | list | `[]` | Who the agent may receive mail from. |
+| `receive_for` | list | — | Only mail delivered to these addresses belongs to this mailbox (shared mailboxes, see below). |
 | `allow_send_to` | list | `[]` | Who the agent may send mail and invites to. |
 | `non_allowed_action` | `delete` \| `keep` | `delete` | What happens to mail from non-allowed senders. |
 | `require_sender_auth` | boolean | `true` | Require a passing SPF/DKIM/DMARC result. |
@@ -98,6 +99,20 @@ On the very first start (and whenever the server resets its UID numbering) the g
 the current inbox as its starting point: existing mail is neither filtered nor reported via
 webhook. Only mail arriving afterwards is processed. Existing mail from non-allowed senders
 is still invisible to the agent.
+
+### Shared mailboxes
+
+Several agents can share one IMAP account, for example a catch-all for a whole domain: give
+each agent its own entry with the same `imap`, `username` and `password`, its own `address`,
+`api_key` and `webhook`, and set `receive_for` to the addresses it handles (`*@domain` works).
+Each entry then only sees, filters and reports mail that the receiving server delivered to one
+of those addresses, read from the top-most `Delivered-To`, `X-Original-To` or `Envelope-To`
+header; `To` and `Cc` are not used, since the sender writes them. Mail for other addresses is
+left untouched, also by `non_allowed_action: delete`. Check that your server adds one of those
+headers: without it, an entry with `receive_for` sees no mail at all.
+
+The entries still share the account's folders: what one agent sends lands in the same Sent
+folder as the others'.
 
 ### Sender authentication
 

@@ -11,6 +11,9 @@ All notable changes to this project are documented here. The format follows
 - `trust_arc`: accept `ARC-Authentication-Results` from `trusted_authserv_id` for sender
   authentication, for providers that write only those (e.g. Forward Email).
 - `trusted_authserv_id` accepts a list of server names.
+- `receive_for`: several mailbox entries can share one IMAP account (e.g. a catch-all), each
+  handling only the mail delivered to its own addresses (`Delivered-To`, `X-Original-To` or
+  `Envelope-To`).
 
 ## [0.5.0]
 

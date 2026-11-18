@@ -111,6 +111,7 @@ export const mailboxSchema = z
     username: z.string().min(1),
     password: z.string().min(1),
     allow_receive_from: z.array(addressPattern).default([]),
+    receive_for: z.array(addressPattern).min(1).optional(),
     allow_send_to: z.array(addressPattern).default([]),
     non_allowed_action: z.enum(['delete', 'keep']).default('delete'),
     require_sender_auth: z.boolean().default(true),

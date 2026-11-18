@@ -134,6 +134,23 @@ describe('decideInbound', () => {
     ).toEqual({ allowed: false, reason: 'sender_auth_failed' });
   });
 
+  it('with receive_for, ignores mail delivered to other addresses before anything else', () => {
+    const shared = { ...cfg, receive_for: ['agent@test.local', '*@agents.test'] };
+    const msg = { from: 'boss@test.local', authResults: ['mx; dmarc=pass'] };
+    expect(decideInbound(shared, { ...msg, deliveredTo: 'agent@test.local' })).toEqual({
+      allowed: true,
+    });
+    expect(decideInbound(shared, { ...msg, deliveredTo: 'x@agents.test' })).toEqual({
+      allowed: true,
+    });
+    for (const deliveredTo of ['other@test.local', null]) {
+      expect(decideInbound(shared, { ...msg, from: 'x@evil.local', deliveredTo })).toEqual({
+        allowed: false,
+        reason: 'other_recipient',
+      });
+    }
+  });
+
   it('skips auth when require_sender_auth is false', () => {
     expect(
       decideInbound(
