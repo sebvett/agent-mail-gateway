@@ -6,6 +6,11 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- `extra_body` for `review.llm` and vision `read_images`: provider-specific request fields
+  (e.g. OpenRouter `provider: { zdr: true }`).
+
 ## [0.5.0]
 
 ### Added

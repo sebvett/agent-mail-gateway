@@ -76,6 +76,7 @@ export interface ModelEndpoint {
   model: string;
   api_key?: string;
   timeout_seconds: number;
+  extra_body?: Record<string, unknown>;
 }
 
 export type ChatMessage = { role: 'system' | 'user'; content: string | unknown[] };
@@ -94,6 +95,7 @@ export async function complete(
       ...(cfg.api_key ? { authorization: `Bearer ${cfg.api_key}` } : {}),
     },
     body: JSON.stringify({
+      ...cfg.extra_body,
       model: cfg.model,
       temperature: 0,
       ...(opts.json ? { response_format: { type: 'json_object' } } : {}),
