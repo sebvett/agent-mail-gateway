@@ -6,6 +6,11 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- `allow_receive_from: ["*"]` accepts mail from any sender (e.g. a newsletter address), still
+  subject to `require_sender_auth` and `inbound_checks`.
+
 ## [0.5.0]
 
 ### Added

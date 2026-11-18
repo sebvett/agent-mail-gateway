@@ -10,6 +10,7 @@ function domainOf(address: string): string | null {
 export function matchesPattern(address: string, pattern: string): boolean {
   const a = normalizeAddress(address);
   const p = normalizeAddress(pattern);
+  if (p === '*') return domainOf(a) !== null;
   if (p.startsWith('*@')) return domainOf(a) === p.slice(2);
   return a === p;
 }

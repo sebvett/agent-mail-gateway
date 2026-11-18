@@ -30,7 +30,7 @@ mailboxes:
     password: ${AGENT_MAIL_PASSWORD}
 
     # Who the agent may receive mail from. Exact addresses or "*@domain" (that exact domain,
-    # no subdomains). Case does not matter. Mail from anyone else is never shown to the agent.
+    # no subdomains), or "*" for anyone (e.g. newsletters). Case does not matter. Mail from anyone else is never shown to the agent.
     # Empty list: the agent sees no mail at all.
     allow_receive_from:
       - you@yourmailserver.eu

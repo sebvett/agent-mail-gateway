@@ -35,6 +35,16 @@ describe('parseConfig', () => {
     expect(cfg.server).toEqual({ port: 8080, log_level: 'info', data_dir: '/data' });
   });
 
+  it('accepts * only for senders', () => {
+    const open = base().replace(
+      'allow_receive_from: [you@example.net, "*@Example.org"]',
+      'allow_receive_from: ["*"]',
+    );
+    expect(parseConfig(open, env).mailboxes[0]!.allow_receive_from).toEqual(['*']);
+    const send = base().replace('allow_send_to: [you@example.net]', 'allow_send_to: ["*"]');
+    expect(() => parseConfig(send, env)).toThrow();
+  });
+
   it('reports all missing env vars at once', () => {
     expect(() => parseConfig(base(), {})).toThrow(/AGENT_KEY, AGENT_PW/);
   });

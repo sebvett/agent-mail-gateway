@@ -17,6 +17,9 @@ const addressPattern = z
     message: 'must be an email address or *@domain',
   });
 
+/** Like addressPattern, plus "*" for any sender. */
+const senderPattern = z.union([z.literal('*'), addressPattern]);
+
 /** A model endpoint URL: OpenAI-compatible, without credentials in it. */
 const modelUrl = z.url().refine(
   (u) => {
@@ -110,7 +113,7 @@ export const mailboxSchema = z
     smtp: endpoint,
     username: z.string().min(1),
     password: z.string().min(1),
-    allow_receive_from: z.array(addressPattern).default([]),
+    allow_receive_from: z.array(senderPattern).default([]),
     allow_send_to: z.array(addressPattern).default([]),
     non_allowed_action: z.enum(['delete', 'keep']).default('delete'),
     require_sender_auth: z.boolean().default(true),

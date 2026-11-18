@@ -32,7 +32,7 @@ must be set and non-empty.
 | `smtp` | object | required | `{ host, port, security }` of the outgoing server. |
 | `username` | string | required | Login for IMAP and SMTP. |
 | `password` | string | required | Password for IMAP and SMTP. |
-| `allow_receive_from` | list | `[]` | Who the agent may receive mail from. |
+| `allow_receive_from` | list | `[]` | Who the agent may receive mail from; `"*"` for anyone. |
 | `allow_send_to` | list | `[]` | Who the agent may send mail and invites to. |
 | `non_allowed_action` | `delete` \| `keep` | `delete` | What happens to mail from non-allowed senders. |
 | `require_sender_auth` | boolean | `true` | Require a passing SPF/DKIM/DMARC result. |
