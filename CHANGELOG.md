@@ -6,6 +6,11 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- `webhook.notify_filtered`: a `message.filtered` webhook (sender, date and the check, no
+  content) when an incoming mail check hides a message.
+
 ## [0.5.0]
 
 ### Added

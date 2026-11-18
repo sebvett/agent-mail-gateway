@@ -147,6 +147,16 @@ export class InboundWatcher {
     const parsed = await parseForSummary(this.ctx, meta, full);
     const verdict = await inspect(this.ctx, validity, uid, parsed);
     if (verdict.hiddenBy) {
+      if (config.webhook?.notify_filtered) {
+        const id = encodeMessageId(validity, uid);
+        const payload = JSON.stringify({
+          event: 'message.filtered',
+          event_type: 'message.filtered',
+          mailbox: config.name,
+          message: { id, from: parsed.from, date: parsed.date, filtered_by: verdict.hiddenBy },
+        });
+        store.enqueueWebhook(config.name, id, payload, this.ctx.now());
+      }
       // Hidden like mail from a sender that is not allowed. A check that only failed never
       // deletes: the mail stays in INBOX and is checked again later.
       if (config.non_allowed_action === 'delete' && verdict.hiddenBy !== 'scan_failed') {

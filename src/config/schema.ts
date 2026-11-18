@@ -233,7 +233,11 @@ export const mailboxSchema = z
       .strict()
       .prefault({}),
     webhook: z
-      .object({ url: z.url(), secret: z.string().min(16) })
+      .object({
+        url: z.url(),
+        secret: z.string().min(16),
+        notify_filtered: z.boolean().default(false),
+      })
       .strict()
       .optional(),
   })
