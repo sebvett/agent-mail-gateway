@@ -142,6 +142,7 @@ export const mailboxSchema = z
             url: modelUrl,
             model: z.string().min(1),
             api_key: z.string().min(1).optional(),
+            extra_body: z.record(z.string(), z.unknown()).optional(),
             mode: z.enum(['block', 'warn', 'off']).default('warn'),
             on_error: z.enum(['allow', 'block']).default('allow'),
             timeout_seconds: z.coerce.number().int().min(1).max(300).default(30),
@@ -213,6 +214,7 @@ export const mailboxSchema = z
                 url: modelUrl,
                 model: z.string().min(1),
                 api_key: z.string().min(1).optional(),
+                extra_body: z.record(z.string(), z.unknown()).optional(),
                 timeout_seconds: z.coerce.number().int().min(1).max(300).default(60),
               })
               .strict(),

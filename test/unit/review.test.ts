@@ -138,7 +138,10 @@ describe('review on send', () => {
   });
 });
 
-type Call = { url: string; body: { model: string; messages: { role: string; content: string }[] } };
+type Call = {
+  url: string;
+  body: { model: string; messages: { role: string; content: string }[]; provider?: unknown };
+};
 
 function llmContext(
   reply: unknown,
@@ -180,6 +183,16 @@ describe('stage 2 LLM review', () => {
     expect(calls[0]!.url).toBe('http://ollama:11434/v1/chat/completions');
     expect(calls[0]!.body.model).toBe('llama3.1:8b');
     expect(calls[0]!.body.messages.at(-1)!.content).toContain('here are the numbers');
+  });
+
+  it('merges extra_body into the request without overriding its own fields', async () => {
+    const { ctx, calls } = llmContext(
+      { approved: true, reason: 'fine' },
+      { extra_body: { provider: { zdr: true }, model: 'other' } },
+    );
+    await sendMessage(ctx, input());
+    expect(calls[0]!.body.provider).toEqual({ zdr: true });
+    expect(calls[0]!.body.model).toBe('llama3.1:8b');
   });
 
   it('blocks with the reviewer reason in block mode', async () => {

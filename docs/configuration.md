@@ -424,6 +424,11 @@ startup); use `api_key` instead. If the model runs on the Docker host, use
 `http://host.docker.internal:11434/v1` (on Linux add
 `extra_hosts: ["host.docker.internal:host-gateway"]` to the gateway service).
 
+`extra_body` (in `review.llm` and in `attachments.read_images` with `engine: vision`) adds
+provider-specific fields to every request, e.g. for OpenRouter
+`extra_body: { provider: { zdr: true } }` to use only zero-data-retention endpoints. It cannot
+override `model`, `messages`, `temperature` or `response_format`.
+
 ### Folders
 
 `Sent` and `Trash` are detected via IMAP special-use flags, then by name. If no Sent folder
