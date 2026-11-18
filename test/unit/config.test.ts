@@ -44,6 +44,8 @@ describe('parseConfig', () => {
     );
     expect(two.mailboxes[0]!.trusted_authserv_id).toEqual(['mx1.example.com', 'mx2.example.com']);
     expect(() => parseConfig(base('    trust_arc: true\n'), env)).toThrow(/trust_arc/);
+  });
+
   it('accepts * only for senders', () => {
     const open = base().replace(
       'allow_receive_from: [you@example.net, "*@Example.org"]',

@@ -262,7 +262,9 @@ export const mailboxSchema = z
   })
   .strict()
   .refine((mb) => !mb.trust_arc || mb.trusted_authserv_id, {
-  });
+    message: 'trust_arc needs trusted_authserv_id (the server whose ARC results are trusted)',
+    path: ['trust_arc'],
+  })
   .refine((mb) => !mb.extract || mb.review.llm, {
     message: 'extract needs review.llm (the model that extracts)',
     path: ['extract'],

@@ -50,6 +50,8 @@ describe('parseMessage', () => {
       'mx1.fwd.example; dmarc=pass header.from=example.net',
       'mx.origin.example; spf=pass',
     ]);
+  });
+
   it('takes the delivery address from the top-most delivery header', async () => {
     const raw = Buffer.from(
       'X-Original-To: Culture@Agents.example\r\nDelivered-To: <other@agents.example>\r\n' +
