@@ -31,6 +31,15 @@ describe('evaluateSenderAuth', () => {
     ).toBe('pass');
   });
 
+  it('passes on dmarc=pass recorded for the organizational domain', () => {
+    const h = 'mx; dkim=pass header.d=news.example.net; dmarc=pass header.from=example.net';
+    expect(evaluateSenderAuth([h], 'a@news.example.net')).toBe('pass');
+    expect(evaluateSenderAuth([h], 'a@notexample.net')).toBe('fail');
+    expect(
+      evaluateSenderAuth(['mx; dmarc=pass header.from=news.example.net'], 'a@example.net'),
+    ).toBe('fail');
+  });
+
   it('fails on dmarc=fail even if dkim passes', () => {
     const h = 'mx; dkim=pass header.d=example.net; dmarc=fail (p=reject) header.from=example.net';
     expect(evaluateSenderAuth([h], 'a@example.net')).toBe('fail');

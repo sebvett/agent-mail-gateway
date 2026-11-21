@@ -56,11 +56,16 @@ export function evaluateSenderAuth(
 
   const dmarc = entries.filter((e) => e.method === 'dmarc' && DMARC_VERDICTS.has(e.result));
   if (dmarc.length > 0) {
-    const ok = dmarc.every(
-      (e) =>
+    // Some servers (e.g. Forward Email) record the organizational domain as header.from.
+    const ok = dmarc.every((e) => {
+      const headerFrom = e.props['header.from'];
+      return (
         e.result === 'pass' &&
-        (e.props['header.from'] === undefined || e.props['header.from'] === fromDomain),
-    );
+        (headerFrom === undefined ||
+          headerFrom === fromDomain ||
+          fromDomain.endsWith(`.${headerFrom}`))
+      );
+    });
     return ok ? 'pass' : 'fail';
   }
 
